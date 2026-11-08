@@ -10,7 +10,8 @@ const OperatorDiscovery = require('../core/discovery');
 const RouterBuilder = require('../core/router');
 const DocumentGenerator = require('./docs-generator');
 const logger = require('../utils/logger');
-const { operatorMethods, chatPluginByMethodMap } = require('../utils/operator-definition');
+const { operatorMethods } = require('../utils/operator-definition');
+const { attachBindings, resolvePublications } = require('./mcp-app-bindings');
 const { playgroundNeedsGeniSpaceKey } = require('../utils/operator-auth');
 
 class ApplicationService {
@@ -217,7 +218,7 @@ class ApplicationService {
         // System-level API runtime config (base URL, headers, timeout)
         systemConfiguration: defaultSystemConfiguration,
 
-        // Methods from root `methods`; merge chatPluginByMethod → chatPluginConfig
+        // Published standard MCP App bindings are deployment data, never remote script URLs.
         methods: this._mergeChatPluginConfigs(
           this._buildMethodsFromDefinition(config),
           config,
@@ -231,14 +232,15 @@ class ApplicationService {
           exportedBy: 'GeniSpace Custom Operators API',
           originalOperatorId: operatorId,
           registeredAt: metadata.registeredAt,
-          ...fileMetadata
+          ...fileMetadata,
+        mcpAppPublications: resolvePublications(config).map(item => ({ method: item.method, app: item.app, status: item.binding ? 'published' : 'unpublished' }))
         }
       }
     };
   }
 
   /**
-   * Playground: registered operators with inputSchema, endpoint, chatPluginConfig
+   * Playground: registered operators with inputSchema, endpoint, MCP App declarations
    * @param {object|null} req for public host
    * @returns {Array<object>}
    */
@@ -270,25 +272,13 @@ class ApplicationService {
             inputSchema: m.inputSchema,
             endpoint: m.configuration?.values?.endpoint,
             httpMethod: m.configuration?.values?.method,
-            chatPluginConfig: m.chatPluginConfig || null,
+            mcpAppBinding: m.mcpAppBinding || null,
+            mcpAppPreview: resolvePublications(config).find(item => item.method === m.identifier)?.preview || null,
             needsGeniSpaceKey
           }))
         };
       })
       .filter(Boolean);
-  }
-
-  /**
-   * Public origin for pluginUrl (no trailing slash)
-   * @param {string} reqBaseUrl
-   * @returns {string}
-   */
-  _resolvePublicBaseUrl(reqBaseUrl) {
-    const explicit = process.env.PUBLIC_BASE_URL || this.config.publicBaseUrl;
-    const trim = (v) => (v && String(v).trim()) || '';
-    const raw = trim(explicit) || trim(reqBaseUrl)
-      || (typeof this.config.getServiceBaseUrl === 'function' ? this.config.getServiceBaseUrl() : '');
-    return raw.replace(/\/$/, '');
   }
 
   /**
@@ -366,46 +356,6 @@ class ApplicationService {
         order: index,
         status: 'ACTIVE'
       };
-    });
-  }
-
-  /**
-   * Merge chatPluginByMethod into exported method chatPluginConfig
-   * @param {Array} methods from _buildMethodsFromDefinition
-   * @param {object} operatorConfig module.exports
-   * @param {string} publicBase public service root URL
-   * @returns {Array}
-   */
-  _mergeChatPluginConfigs(methods, operatorConfig, publicBase) {
-    const byMethod = chatPluginByMethodMap(operatorConfig);
-    if (!methods || !Array.isArray(methods)) {
-      return [];
-    }
-
-    return methods.map((m) => {
-      const spec = byMethod[m.identifier];
-      if (!spec || spec.enabled !== true) {
-        return m;
-      }
-
-      let pluginUrl = spec.pluginUrl;
-      if (!pluginUrl && spec.pluginPath) {
-        const p = String(spec.pluginPath).startsWith('/') ? spec.pluginPath : `/${spec.pluginPath}`;
-        pluginUrl = publicBase ? `${publicBase}${p}` : p;
-      }
-      if (pluginUrl && !String(pluginUrl).endsWith('/')) {
-        pluginUrl = `${pluginUrl}/`;
-      }
-
-      const extra = spec.extra && typeof spec.extra === 'object' ? spec.extra : {};
-      const chatPluginConfig = {
-        enabled: true,
-        pluginId: spec.pluginId,
-        pluginUrl,
-        ...extra
-      };
-
-      return { ...m, chatPluginConfig };
     });
   }
 

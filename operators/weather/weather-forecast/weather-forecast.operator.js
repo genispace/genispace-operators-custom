@@ -106,12 +106,8 @@ module.exports = {
     }
   },
   routes: './weather-forecast.routes.js',
-  chatPluginByMethod: {
-    forecast: {
-      enabled: true,
-      pluginId: 'weather-forecast',
-      pluginPath: '/static/plugins/weather/weather-forecast/plugins/forecast/'
-    }
+  mcpAppsByMethod: {
+    forecast: { app: 'weather-forecast', entryKey: 'view' }
   },
   methods: [
     {

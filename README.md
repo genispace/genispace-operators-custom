@@ -2,38 +2,33 @@
 
 **🌐 Language**: [中文](README_CN.md) | **English**
 
-> **Platform-internal** operator service: OpenAPI HTTP operators plus optional **Chat remote plugins** served from `/static/plugins`.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
-This repository is **not** the customer-facing `operators-custom` template. It ships **official built-in operators** for GeniSpace (release cadence follows the platform). **Authoring guide** (directory layout, `*.operator.js` / routes, user vs system configuration, `__config` / `configDelivery`, Chat plugins, auth, local dev, deploy): [docs/creating-operators.md](docs/creating-operators.md).
+This repository is **not** the customer-facing `operators-custom` template. It ships **official built-in operators** for GeniSpace (release cadence follows the platform). **Authoring guide** (directory layout, `*.operator.js` / routes, user vs system configuration, `__config` / `configDelivery`, MCP Apps, auth, local dev, deploy): [docs/creating-operators.md](docs/creating-operators.md).
 
 ## 💡 What is an Operator?
 
-An operator declares HTTP methods and JSON Schemas in root-level **`methods`**. At load time the service **derives OpenAPI** for Swagger and endpoint indexing. Optional root **`chatPluginByMethod`** maps to exported **`chatPluginConfig`** so Chat can load a **remote plugin** (`manifest.json` + JS bundle) for rich UI. Legacy **`genispace.*`** nesting remains supported.
 
 ## 🚀 What This Repo Adds (vs operators-custom)
 
-- **`PUBLIC_BASE_URL`** (or `OPERATORS_BASE_URL`) for absolute **`pluginUrl`** in exported definitions.
-- **`npm run build:plugins`** → copies each `operators/**/plugin/` into `public/plugins/...`, served at **`/static/plugins/...`**.
-- **`npm run dev`** → Express (default `:8080`) + Vite playground (`:18080`) for schema forms and plugin preview.
+- **`npm run dev`** → Express (default `:8080`) + Vite playground (`:18080`) for schema forms and standard App preview.
 - **Pilot operator**: `operators/web/web-browser/` aligned with the Python `web_browser` builtin (input validation + MCP-shaped JSON only; no headless browser).
 
 ### Core Advantages
 
-- Same **Express** routing model as custom operators; contract is **methods-first** with **derived OpenAPI**, plus **first-class Chat plugin** workflow.
+- Same **Express** routing model as custom operators; contract is **methods-first** with **derived OpenAPI**, plus **first-class MCP App** workflow.
 - **Clear boundary**: implementation here, registration and ACL in **Core API**, tool listing in **MCP-Server**, rendering in **Chat**.
 
 ## 🚀 Quick Start
 
-### 1. Install, build plugins, start API
+### 1. Install, build Apps, start API
 
 ```bash
 git clone https://github.com/genispace/operators-internal.git
 cd operators-internal
 npm install
-npm run build:plugins
 npm start
 ```
 
@@ -41,7 +36,6 @@ Access:
 - 🏠 **Homepage**: http://localhost:8080/api (HTML index)
 - 📚 **API Docs**: http://localhost:8080/api/docs  
 - 🔍 **Health Check**: http://localhost:8080/health
-- 📦 **Example plugin manifest**: http://localhost:8080/static/plugins/web/web-browser/manifest.json
 
 ### 2. Dev playground (operators + UI preview)
 
@@ -127,7 +121,6 @@ module.exports = {
 };
 ```
 
-Optional: `tags`, `security`, `requestBodyRequired` (default `true`), `additionalResponses` (Swagger-only extra status codes), root **`openapiComponents.schemas`** for `$ref` (see `genispace-info`). For Chat plugins, use root **`chatPluginByMethod`** with keys matching **`identifier`** (lowercase). Legacy `genispace: { methods, chatPluginByMethod, openapiComponents }` still works.
 
 ### Business Logic File
 
@@ -493,3 +486,25 @@ curl -X POST http://localhost:8080/api/platform/genispace-info/user-profile \
 ## 📄 Open Source License
 
 This project is open source under the [MIT License](LICENSE).
+
+## Standard MCP Apps
+
+Operator methods declare `mcpAppsByMethod` with an App ID and `entryKey: "view"`. Sources live in `operators/<category>/<operator>/apps/<entry>/`. Apps receive standard tool inputs/results and Host context; React, icons and locale dictionaries are bundled into immutable HTML. The responsive summary/detail layout uses `containerDimensions` and preserves mounted draft state. Apps never invoke business tools on initialization.
+
+```sh
+npm ci
+npm ci --prefix mcp-apps
+npm run build:apps
+npm test
+```
+
+Publish to a selected API environment with a deployment credential in `GENISPACE_API_KEY`:
+
+```sh
+npm run publish:apps -- --api https://api.example.com/api --output .mcp-app-bindings/production.json --global
+MCP_APP_API_BASE_URL=https://api.example.com/api MCP_APP_BINDINGS_FILE=.mcp-app-bindings/production.json npm run validate:apps
+```
+
+Publish only committed source revisions. The publisher uploads the exact built bytes, verifies SHA-256 and creates a versioned release through the platform API. Repeating the same release manifest is idempotent. The environment binding manifest contains actual release IDs for every declared operator method; shared-flow methods reference one release. Set `MCP_APP_API_BASE_URL` and `MCP_APP_BINDINGS_FILE` on the operator service. A missing publication appears in definition metadata, while business methods remain available without a view. Deployment validation fails on any missing binding, foreign environment or changed build hash.
+
+The local playground uses the shared sandboxed Host as one versioned build artifact with source revision and SHA verification, with explicit `local-preview` identity and all App tool actions disabled. It requires Node 22. Run `npm run dev:sandbox --prefix dev-playground` in a separate terminal for the local sandbox proxy. The archive and release provenance are checked before every playground build; consumer source does not contain a second Host implementation. `VITE_MCP_APP_SANDBOX_URL` selects that proxy (default `http://127.0.0.1:5017/sandbox.html`). Only development mode serves `/static/mcp-apps/` for this explicit preview. Production resources are read through authorized MCP `resources/read`. API keys stay outside the App.

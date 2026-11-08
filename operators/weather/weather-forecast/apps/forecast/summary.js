@@ -1,13 +1,11 @@
-'use strict';
+import React from 'react';
+import * as Lucide from 'lucide-react';
+import { translate, localeIndex } from '../../../../../mcp-apps/locale.mjs';
+import locales from './locales.json';
 
-/**
- * 消息列表 Artifact 内联天气卡片（与 WeatherWidget 布局一致，内联样式以便远程 eval 不受 Tailwind 扫描影响）。
- * props: { event, compact?, config?: { locale, theme } }
- * i18n: plugin/locales/*.json — npm run build:plugins prepends __PLUGIN_I18N + __gsPluginT.
- */
 
 function tt(p, k) {
-  return __gsPluginT(__PLUGIN_I18N, p, k);
+  return translate(locales, p, k);
 }
 
 function round(v) {
@@ -44,13 +42,6 @@ function parseWeatherPayload(raw) {
     }
   }
   if (!obj || typeof obj !== 'object') return { kind: 'none' };
-  if (Array.isArray(obj) && obj[0] && obj[0].text) return parseWeatherPayload(obj[0].text);
-  if (obj.data && Array.isArray(obj.data) && obj.data[0] && obj.data[0].text) return parseWeatherPayload(obj.data[0].text);
-  var inner = obj.result && obj.result.content && obj.result.content[0];
-  if (inner && inner.text) return parseWeatherPayload(inner.text);
-  inner = obj.data && obj.data.result && obj.data.result.content && obj.data.result.content[0];
-  if (inner && inner.text) return parseWeatherPayload(inner.text);
-
   if (obj.operatorId != null || obj.methodId != null) {
     if (obj.data != null && typeof obj.data === 'object' && !Array.isArray(obj.data)) {
       obj = obj.data;
@@ -78,22 +69,7 @@ function errHintKey(code) {
   return 'err_hint_generic';
 }
 
-function parseFromEvent(event) {
-  var r = event && event.metadata && event.metadata.result;
-  if (!r) return { kind: 'none' };
-  if (r.success === false) {
-    return { kind: 'tool_failed', message: (r.error && String(r.error)) || 'Tool failed' };
-  }
-  var content = r.result && r.result.content && r.result.content[0];
-  if (!content || !content.text) return { kind: 'none' };
-  var parsed;
-  try {
-    parsed = JSON.parse(content.text);
-  } catch (_e) {
-    return { kind: 'none' };
-  }
-  return parseWeatherPayload(parsed);
-}
+
 
 function formatDay(p, dateStr) {
   try {
@@ -101,7 +77,7 @@ function formatDay(p, dateStr) {
     var today = new Date();
     today.setHours(0, 0, 0, 0);
     var diff = (d.getTime() - today.getTime()) / 86400000;
-    var locIx = __gsPluginLocaleIndex(p, __PLUGIN_I18N);
+    var locIx = localeIndex(locales, p);
     if (String(locIx || '').toLowerCase().split('-')[0] === 'zh') {
       if (diff >= 0 && diff < 1) return '今天';
       if (diff >= 1 && diff < 2) return '明天';
@@ -143,15 +119,13 @@ function detailChip(React, Lucide, dark, iconName, label, value) {
   );
 }
 
-module.exports.default = function WeatherForecastArtifactWidget(props) {
-  var React = require('react');
-  var Lucide = require('lucide-react');
+export default function WeatherForecastArtifactWidget(props) {
   var dark = props.config && props.config.theme === 'dark';
   var muted = dark ? '#94a3b8' : '#64748b';
   var fg = dark ? '#e2e8f0' : '#334155';
   var border = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
-  var parsed = parseFromEvent(props.event);
+  var parsed = (props.success === false ? { kind: 'tool_failed', message: props.error || 'Tool failed' } : parseWeatherPayload(props.data));
 
   if (parsed.kind === 'tool_failed') {
     return React.createElement(

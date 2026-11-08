@@ -1,27 +1,29 @@
 {
-  "name": "operators-internal",
+  "name": "operators-custom",
   "version": "1.0.0",
-  "description": "GeniSpace platform-internal operators: HTTP OpenAPI operators plus colocated Chat plugin static assets.",
+  "description": "GeniSpace platform-internal operators: HTTP OpenAPI operators plus standard MCP Apps resources.",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev:server": "nodemon src/index.js",
     "dev:playground": "npm run dev --prefix dev-playground",
     "dev": "concurrently -n server,playground -c blue,magenta \"npm run dev:server\" \"npm run dev:playground\"",
-    "build:plugins": "node scripts/build-plugins.js",
-    "build": "npm run build:plugins",
+    "build": "npm run build:apps",
     "build:all": "npm run build",
     "test": "node scripts/run-tests.js",
     "test:e2e": "node test.js",
     "docker:build": "docker build -t genispace/operators-internal:latest .",
-    "docker:run": "docker run -p 8080:8080 genispace/operators-internal:latest"
+    "docker:run": "docker run -p 8080:8080 genispace/operators-internal:latest",
+    "build:apps": "node mcp-apps/build.cjs",
+    "publish:apps": "node mcp-apps/publish.cjs",
+    "validate:apps": "node mcp-apps/validate.cjs"
   },
   "keywords": [
     "genispace",
     "operators-internal",
     "operators",
     "openapi",
-    "chat-plugins"
+    "mcp-apps"
   ],
   "author": "genispace.com Dev Team <dev@genispace.com>",
   "license": "MIT",
@@ -30,7 +32,7 @@
     "url": "https://github.com/genispace/operators-internal.git"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "npm": ">=8.0.0"
   },
   "dependencies": {

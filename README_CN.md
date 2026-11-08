@@ -2,7 +2,6 @@
 
 **🌐 语言**: **中文** | [English](README.md)
 
-> **平台官方内置**算子服务：HTTP/OpenAPI 执行面 + 可选 **Chat 远程插件**（`/static/plugins` 托管）。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
@@ -11,12 +10,9 @@
 
 ## 💡 什么是算子？
 
-算子在 **`*.operator.js` 根级** 用 **`methods`** 声明 HTTP 方法与 JSON Schema；服务加载时 **派生 OpenAPI** 供 Swagger UI 与端点索引。可选根级 **`chatPluginByMethod`** 映射到导出定义里的 **`chatPluginConfig`**，Chat 通过 `loadRemotePlugin` 加载同仓构建的 `manifest.json` + 脚本做富展示。历史 **`genispace.methods` / `genispace.chatPluginByMethod`** 仍兼容。
 
 ## 🚀 相对 operators-custom 的增量能力
 
-- **`PUBLIC_BASE_URL`**：导出 definition 时拼接绝对 **`pluginUrl`**。
-- **`npm run build:plugins`**：聚合 `operators/**/plugin/` → `public/plugins/`，经 **`/static/plugins`** 访问。
 - **`npm run dev`**：同时启动 Express（默认 `8080`）与 Vite 调试台（`18080`），表单 + 插件预览闭环。
 - **示范算子** `operators/web/web-browser/`：与 Agent 内置 `web_browser` 入参/校验/输出 JSON 对齐（无 Puppeteer）。
 
@@ -33,7 +29,6 @@
 git clone https://github.com/genispace/operators-internal.git
 cd operators-internal
 npm install
-npm run build:plugins
 npm start
 ```
 
@@ -41,7 +36,6 @@ npm start
 - 🏠 **首页**：http://localhost:8080/api
 - 📚 **API 文档**：http://localhost:8080/api/docs  
 - 🔍 **健康检查**：http://localhost:8080/health
-- 📦 **示例插件**：http://localhost:8080/static/plugins/web/web-browser/manifest.json
 
 ### 2. 本地调试台
 
@@ -127,7 +121,6 @@ module.exports = {
 };
 ```
 
-可选字段：`tags`、`security`、`requestBodyRequired`（默认 `true`）、`additionalResponses`（仅影响派生 Swagger，如 401/400）、根级 **`openapiComponents.schemas`**（供 `$ref`，见 `genispace-info` 算子）。Chat 插件用根级 **`chatPluginByMethod`**，**key 与 `identifier` 小写一致**。仍支持旧写法 `genispace: { methods, chatPluginByMethod, openapiComponents }`。
 
 ### 业务逻辑文件
 
@@ -476,3 +469,5 @@ curl -X POST http://localhost:8080/api/platform/genispace-info/user-profile \
 ## 📄 开源协议
 
 本项目采用 [MIT 协议](LICENSE) 开源。
+
+标准 MCP Apps 的构建、发布、环境绑定与开发沙箱说明见 [README](./README.md)。

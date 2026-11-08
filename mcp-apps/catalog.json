@@ -1,0 +1,10 @@
+[
+  {
+    "id": "weather-forecast",
+    "directory": "operators/weather/weather-forecast/apps/forecast",
+    "operatorIdentifier": "weather-forecast",
+    "methods": [
+      "forecast"
+    ]
+  }
+]

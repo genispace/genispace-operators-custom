@@ -151,3 +151,10 @@ debug.js
 
 # Chat plugin static assets (npm run build:plugins / npm run build)
 public/plugins/
+
+# Reproducible MCP App artifacts and environment publication records
+public/mcp-apps/
+.mcp-app-bindings/
+
+# Versioned shared Host artifact (same immutable bundle in every consumer)
+!dev-playground/vendor/mcp-app-host/*/*.tgz

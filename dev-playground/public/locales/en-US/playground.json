@@ -13,10 +13,7 @@
   "panel": {
     "requestTitle": "Request body",
     "requestDesc": "Form generated from inputSchema; calls operator API",
-    "outputTitle": "Output preview",
-    "outputDesc": "JSON or remote chat plugin (same load path as production)",
-    "outputEmpty": "Run to see results; if chatPluginConfig is enabled the remote plugin loads.",
-    "noChatPluginHint": "This method has no chatPluginConfig (default operator view contract)."
+    "outputTitle": "Output preview"
   },
   "form": {
     "selectOperatorMethod": "Select an operator and method above",
@@ -31,10 +28,6 @@
     "keyLabel": "GeniSpace API key",
     "keyHint": "Stored only in this browser (localStorage). Do not commit keys to the repo.",
     "keyPlaceholder": "Paste system API key"
-  },
-  "plugin": {
-    "loading": "Loading remote plugin…",
-    "noDefaultExport": "Plugin has no renderable default export"
   },
   "errors": {
     "registryFailed": "Failed to load operator registry"

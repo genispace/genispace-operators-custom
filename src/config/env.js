@@ -69,7 +69,7 @@ const config = {
     trustProxy: process.env.TRUST_PROXY === 'true'
   },
   
-  /** Public service root for chat remote plugin URLs; falls back to getServiceBaseUrl() */
+  /** Public service root for OpenAPI servers and try-it-out requests */
   publicBaseUrl: process.env.PUBLIC_BASE_URL || null,
 
   /** Ingress path prefix to strip (e.g. /operators/internal) so /api, /static, /health match */

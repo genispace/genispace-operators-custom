@@ -1,6 +1,6 @@
 # 如何创建算子（operators-internal 指南）
 
-本文说明在本仓库中**新增或维护内置算子**时要做什么：目录结构、`*.operator.js` / `*.routes.js` 的写法、配置与请求体约定、可选的远程插件，以及本地构建与导入。**文中路径均以本仓库根目录为基准。**
+本文说明在本仓库中**新增或维护内置算子**时要做什么：目录结构、`*.operator.js` / `*.routes.js` 的写法、配置与请求体约定、可选的MCP App，以及本地构建与导入。**文中路径均以本仓库根目录为基准。**
 
 ---
 
@@ -11,7 +11,6 @@
 **本仓库职责**：
 
 - 提供真实的 **HTTP 执行面**（OpenAPI 由 `methods` 派生）。
-- 可选：提供 **Chat 远程插件**静态资源（`plugins/<methodOrShared>/`，经构建复制到 `public/plugins/.../plugins/<slot>/`）。
 
 **与 `operators-custom` 的区别**：本仓库为**官方内置算子**，随平台版本发布；`operators-custom` 面向客户模板与 fork。
 
@@ -20,12 +19,10 @@
 ## 2. 新建算子：最小步骤
 
 1. 在 `operators/<category>/<name>/` 下新增两个文件：
-   - **`<name>.operator.js`**：算子元数据、`methods`、可选 `configuration` / `systemConfiguration` / `metadata` / `chatPluginByMethod` 等。
    - **`<name>.routes.js`**：Express `Router`，挂载路径需与 OpenAPI 派生规则一致（见第 7 节）。
 2. 确保 `methods` 中每条包含 **`identifier`**、**`path`**、**`httpMethod`**、**`inputSchema`** / **`outputSchema`**（与现有算子对齐）。
 3. 本地执行 `npm install`、`npm run build`（含插件复制）、`npm start` 或 `npm run dev`，在首页与 Swagger 中确认路由与定义无误。
 4. 在调试台或首页复制该算子的 **definition** URL，到平台控制台使用「算子定义导入」导入。
-5. 若含 `plugins/<slot>/`，确认 `npm run build:plugins` 后 `GET /static/plugins/<category>/<name>/plugins/<slot>/manifest.json` 可访问；生产环境配置 **`PUBLIC_BASE_URL`**（或 `OPERATORS_BASE_URL`），使 definition 中的 `pluginUrl` 为浏览器可访问的绝对地址。写插件时请看 **第 8 节**。
 
 **参考完整示例（用户密钥经 `__config` 出站）**：
 
@@ -38,12 +35,8 @@
 
 | 路径 | 作用 |
 |------|------|
-| `operators/<category>/<name>/*.operator.js` | 算子主配置：根级 **`methods`（必填）**；可选 `configuration`、`systemConfiguration`、`metadata`、`routes`、`chatPluginByMethod`、`openapiComponents` 等。加载时会派生 **OpenAPI**。兼容旧包裹 `genispace: { methods, ... }`。 |
 | `operators/<category>/<name>/*.routes.js` | Express `Router`；挂载路径为 **`{apiPrefix}/{category}/{name}{path}`**，默认 **`apiPrefix` 为 `/api`**（见 `src/services/app-service.js` 的 `applyTo`，可用环境配置覆盖）。 |
-| `operators/<category>/<name>/plugins/<slot>/` | 可选。`<slot>` 通常等于某方法的 **`identifier`**；多方法共用一套 UI 时用 **`shared`**。内含 `manifest.json`、入口脚本（默认 `index.js`，CommonJS）；可选 **`widget`**（见第 8.2 节）。 |
-| `plugins/<slot>/locales/en.json`、`zh.json` | 插件文案；构建时复制到 `public/plugins/<category>/<name>/plugins/<slot>/locales/`。 |
 
-构建：`npm run build` / `npm run build:plugins`（开发模式启动服务时也会执行 `scripts/build-plugins.js`）将各算子 **`plugins/*/`** 下含 **`manifest.json`** 的子目录中的 **`main` 入口**（若声明且文件存在）、**`manifest.widget` 指向的文件**（若有）、**`locales/`** 复制到 **`public/plugins/<category>/<name>/plugins/<slot>/`**，运行时通过 **`GET /static/plugins/...`** 提供。遗留的 **`plugin/`**（无 `plugins/`）仅会触发构建脚本的弃用告警，不再参与复制。**仅做消息内联卡片、不需要活动面板主插件时，可以不提供 `main` 或不在 manifest 中写 `main`**，只要 **`widget` 与对应脚本文件** 存在即可通过构建复制（详见第 8.3 节）。
 
 ---
 
@@ -61,7 +54,6 @@
 
 每个元素描述一个 HTTP 端点，常见字段：
 
-- **`identifier`**：方法唯一标识（小写），与 `chatPluginByMethod` 的 key 对齐。
 - **`name`**、**`description`**
 - **`path`**、**`httpMethod`**：如 `'/send'`、`'POST'`
 - **`inputSchema`** / **`outputSchema`**：JSON Schema（**`isPort`、`title`、中文覆盖**见 **第 4.8 节**）
@@ -109,25 +101,9 @@ metadata: {
 
 为 `true` 时，平台在调用你的 HTTP 服务时可能附加 **`GeniSpace: <systemApiKey>`** 请求头（具体以导入后的系统配置与执行上下文为准）。本地调试台（`dev-playground`）是否展示 Key 输入区：**仅当算子文件根级** `enableGeniSpaceAuth === true`；**仅方法级** OpenAPI `security: GeniSpaceAuth` 只影响文档，**不会**单独打开调试台 Key 区域。路由侧校验见第 7 节。
 
-### 4.7 `chatPluginByMethod`（可选）
+### 4.7 `mcpAppsByMethod`（可选）
 
-将方法与 Chat 远程插件关联。导出 **definition** 时会合并为方法上的 **`chatPluginConfig`**（含绝对 **`pluginUrl`**）。
-
-Chat 插件静态资源放在算子目录 **`plugins/<slot>/`**（`manifest.json`、入口脚本、可选 `locales/`）：**`<slot>`** 一般与 **`methods[].identifier`** 一致；**多个方法共用同一套前端**时用固定目录名 **`shared`**。`npm run build:plugins` 会输出到 **`public/plugins/<category>/<operator>/plugins/<slot>/`**，与下面 **`pluginPath`** 对齐。
-
-```javascript
-chatPluginByMethod: {
-  open: {  // key = methods[].identifier（小写）
-    enabled: true,
-    pluginId: 'web-browser',
-    pluginPath: '/static/plugins/web/web-browser/plugins/open/',  // 或 pluginUrl: 'https://.../'
-  },
-},
-```
-
-**启用条件**：**`enabled === true`** 且存在可用的 **`pluginUrl`**（及可选 `pluginId`）时，Chat 会加载远程插件；否则使用默认工具结果视图。导入后以平台上的方法详情为准。  
-**插件如何读数据、与 `outputSchema` 的关系**：第 **8.0** 节。  
-**`main` / `widget` 分工**：第 **8.3** 节。
+方法关联标准 MCP App 的源码声明，实际 `mcpAppBinding` 从目标环境的发布绑定文件读取，详见第 8 节。
 
 ### 4.8 `inputSchema` / `outputSchema`、工作流端口（`isPort` / `title`）
 
@@ -224,113 +200,25 @@ const apiKey = cfg.SENDGRID_API_KEY;
 
 ---
 
-## 8. 可选：Chat 远程插件
+## 8. 标准 MCP Apps
 
-- 插件静态资源由 **`/static/plugins/...`** 提供；definition 中的 **`pluginUrl`** 应对浏览器 **HTTPS** 可访问，跨域时注意 **CORS**。
-- 构建产物路径：`public/plugins/<category>/<name>/`。
+界面是独立的、可重复构建的 HTML 资源。React 组件使用 ESM；`mcp-apps/runtime.jsx` 通过官方 Apps SDK 接收 `ontoolinput`、`ontoolresult` 与 Host context。界面不能读取平台凭据，初始化时不会调用业务工具。
 
-### 8.0 写插件：props 里有什么？怎么拿到算子输出？
+源码放在 `operators/<category>/<name>/apps/<entry>/`，包含 `app.json`、`entry.jsx`、`detail.js`、可选 `summary.js` 和 `locales.json`。摘要与详情属于同一个 App：根据标准 `containerDimensions` 调整展示，保持详情树与本地草稿状态。
 
-#### `outputSchema` 对应你路由里的哪一段？
+1. 在 `mcp-apps/catalog.json` 声明 App 与真实 operator/method identifier 的对应关系。
+2. 算子通过 `mcpAppsByMethod` 声明 `{ app, entryKey: 'view' }`。多个方法可以共用同一 App。
+3. 执行 `npm ci --prefix mcp-apps && npm run build:apps`，产物为 `public/mcp-apps/<app>/view.html`，构建记录包含 SHA-256。SDK、React 与多语言均已打包，无运行时 CDN。
+4. 提交源码后运行 `npm run publish:apps -- --api <环境API根地址> --output <绑定文件> [--global]`。凭据只通过 `GENISPACE_API_KEY` 环境变量提供，不进入文件或 App。发布器上传实际字节并创建不可变 release。
+5. 服务设置 `MCP_APP_API_BASE_URL` 与 `MCP_APP_BINDINGS_FILE`。方法导出的 `mcpAppBinding` 只引用实际发布的 release ID；标准工具 metadata 与 `ui://` 资源 URI 由平台生成。
+6. 部署前运行 `npm run validate:apps`；缺失绑定、目标环境不符或构建 hash 变化均失败。未发布时业务方法仍可执行，definition metadata 明确显示缺口。
 
-- **`outputSchema` 应与 HTTP 实际返回的 JSON 一致**（见 **第 4.8 节**）：可以是**扁平业务对象**。
-
-#### 主插件 `index.js`：宿主会传哪些 props？
-
-Chat 会把工具结果包装后传给插件，你在实现时按下面规则处理 **`props.data`** 即可（不必追踪各服务内部实现）：
-
-1. **`props.data` 常常是「业务 JSON 对象」**：若平台已剥掉 `{ operatorId, methodId, data }` 一类外层，你直接按 `outputSchema` 画的字段读即可。
-2. **有时是字符串**：若宿主传入的是 **JSON 字符串**，需 **`typeof props.data === 'string'` 时 `JSON.parse`**，与 `operators/weather/weather-forecast/plugins/forecast/index.js` 一致。
-3. **失败态**：**`props.success === false`** 或存在 **`props.error`** 时按错误 UI 处理。注意：**本地调试台**可能固定传 `success: true`，业务失败请**解析 `data` 内字段**（如 `ok: false`）自行判断。
-
-| prop | 作用 |
-|------|------|
-| **`data`** | 业务负载（对象或需解析的字符串，见上）。 |
-| **`success`** / **`error`** | 工具是否成功、错误文案。 |
-| **`config.locale`** | 界面语言，文案优先按此分支。 |
-| **`config.theme`** | **`light` / `dark`**，明暗样式只读此项。 |
-| **`timestamp`**、**`metadata`**、**`compact`**、**`className`**、**`platform`** | 展示与布局用（按需使用）。 |
-
-#### 本地调试台与 Chat 的差异
-
-- 调试台可能把 **`props.data` 固定为字符串**（`JSON.stringify` 后的结果）；插件内应兼容「字符串 / 对象」两种形态。
-- 调试台执行插件时**仅注入白名单模块**（如 `react`、`react-dom`、`lucide-react`），**无**任意 npm 包；图标类 UI 优先 **`lucide-react`**。
-
-#### 内联 `widget.js` 和 `index.js` 有什么不同？
-
-- **`index.js`（main）**：主要看 **`props.data`**（规则见上表）。
-- **`widget.js`**：主要看 **`props.event`**。天气示例里从 **`event.metadata.result`** 等路径取工具结果再 **`JSON.parse`**，见 **`operators/weather/weather-forecast/plugins/forecast/widget.js`**。
-
-**建议**：把「从任意结构剥到与 **`outputSchema` 一致的业务体」**抽成共用函数，**`index.js`** 与 **`widget.js`** 共用，避免两处规则漂移。
-
-#### 新建插件目录时要有什么？
-
-1. **`plugin/manifest.json`**：至少 `name`、`version`、`minimumChatVersion`；要活动面板就写 **`main": "index.js"`**；要消息里小卡片就写 **`widget": "widget.js"`**（可同时写）。
-2. **`index.js`**：CommonJS，`module.exports.default = function MyPlugin(props) { ... }`，第一行通常 `require('react')`。
-3. **`widget.js`**（可选）：同样默认导出组件，从 **`props.event`** 取数（见上）。
-4. **`*.operator.js`** 里 **`chatPluginByMethod`** 对应方法 **`enabled: true`** + **`pluginPath`**（或 `pluginUrl`）。
-5. 跑 **`npm run build`** 或 **`node scripts/build-plugins.js`**，确认 **`public/plugins/...`** 下有对应文件。
-
-### 8.1 与 Chat 语言、明暗主题对齐
-
-编写插件时应**优先读 `props.config.locale` / `props.config.theme`**，再在缺省时回退到 `navigator`，这样与 Chat 顶栏切换一致。**不要只在首次挂载时读一次**：应在渲染中随 props 更新。
-
-### 8.1.1 多语言（构建期注入）
-
-本仓库内带 **`plugin/locales/`** 的远程插件采用**构建期合并 + 运行时解析**。
-
-- **目录**：**`plugin/locales/{locale}.json`**（如 **`en.json`**、**`zh.json`**）。**`en.json` 必填**；缺失时 **`npm run build:plugins`** 会报错退出。
-- **内容**：扁平 **`"键": "文案"`**。插件内通过 **`__gsPluginT(__PLUGIN_I18N, props, '键')`** 取文案；缺失时回退 **`en`**。
-- **构建**：**`npm run build`** / **`node scripts/build-plugins.js`** 会在输出脚本头部注入 **`__PLUGIN_I18N`** 等；浏览器加载的是 **`public/plugins/...`** 下产物，改 JSON 后需重新 **`npm run build:plugins`**。
-
-### 8.2 消息列表 Artifact 内联 widget（`manifest.widget`）
-
-除 **`main`** 外，可再提供**独立脚本**，用于**同一条助手消息内的产物卡片**（Artifact）。是否展示由 Chat 读取 **`pluginUrl/manifest.json`** 的 **`widget`** 决定。
-
-在 **`plugin/manifest.json`** 中设置 **`widget`**：
-
-- **字符串**：相对 `plugin/` 的文件名（如 **`"widget.js"`**）。
-- **`true`**：等价于 **`widget.js`**。
-- **省略**：不声明内联脚本。
-
-参考：`operators/weather/weather-forecast/plugin/manifest.json` 与 **`plugin/widget.js`**。
-
-**构建**：**`scripts/build-plugins.js`** 会复制 **`manifest.json`**、存在的 **`main`**、**`widget` 指向的文件**、**`locales/``**。静态 URL：**`GET /static/plugins/<category>/<name>/<文件名>`**。
-
-### 8.3 `main` 与 `widget` 的分工（活动面板 vs 消息内联）
-
-| 字段 | 典型用途 |
-|------|-----------|
-| **`main`** | 活动面板 / 工具输出主区域：加载该脚本作为 React 根组件。 |
-| **`widget`** | **同一条助手消息内**的 Artifact 内联卡片，与过程时间轴分离。 |
-
-**组合**：
-
-1. **`main` + `widget`**：消息里小卡片 + 侧栏详情。
-2. **仅有 `widget`**（无 `main`）：**纯内联**——消息里有卡片，活动面板不加载主脚本、避免空白侧栏。
-3. **仅有 `main`**：只有主输出路径，无消息内联产物卡片。
-
-**仅内联时的 `manifest.json` 示例**：
-
-```json
-{
-  "name": "my-operator-inline-only",
-  "version": "1.0.0",
-  "widget": "widget.js",
-  "rendererType": "my-operator-renderer",
-  "minimumChatVersion": "1.0.0"
-}
-```
-
-**自检**：改完 manifest 后 **`npm run build`** 或 **`node scripts/build-plugins.js`**，确认 **`public/plugins/<category>/<name>/`** 下有所需 **`widget.js`** / **`main`** 文件且无 404。
-
----
+开发调试台使用固定 Git commit 的共享沙箱 Host 和明确的 `local-preview` 身份；视图内工具调用被关闭。选 240px 检查行内摘要，选 560px 检查详情；调整容器高度不能重建 App。生产资源仅通过权限受控的标准 MCP `resources/read` 获取。
 
 ## 9. 环境变量（摘要）
 
 | 变量 | 说明 |
 |------|------|
-| **`PUBLIC_BASE_URL`** | 对外服务根 URL（无尾斜杠），用于 definition 中 **`pluginUrl`** 等绝对地址。 |
 | **`OPERATORS_BASE_URL`** | 未设置 `PUBLIC_BASE_URL` 时的回退之一。 |
 | **`PORT` / `HOST` / `PROTOCOL`** | 本地默认如 `http://HOST:PORT`。 |
 | **`TAVILY_API_KEY`** | （可选）`tavily-search` 算子使用；未配置时部分行为为演示占位。 |
@@ -342,7 +230,6 @@ Chat 会把工具结果包装后传给插件，你在实现时按下面规则处
 1. **`npm install && npm run build && npm start`**（默认 **8080**）；`build` 会执行插件复制。
 2. **`npm run dev`**：同时起算子服务与 Vite 调试台（常见 **http://localhost:18080**），将 **`/api`**、**`/static`** 代理到 **8080**。
 3. 在调试台按方法与 Schema 试跑；需要 GeniSpace 认证的算子在调试台填入 **API Key**（见第 4.6 节）。
-4. 从首页复制 **definition** URL，到平台控制面导入；带插件的方法检查 **`chatPluginConfig.pluginUrl`** 是否可在浏览器访问。
 
 **手测 GeniSpace 认证（调试台）**：
 
@@ -354,7 +241,6 @@ Chat 会把工具结果包装后传给插件，你在实现时按下面规则处
 
 ## 11. 生产部署（摘要）
 
-- **`PUBLIC_BASE_URL` / `OPERATORS_BASE_URL`** 设为浏览器实际访问的对外根，使 **`pluginUrl`** 与 Chat 页面 **协议、主机、路径前缀** 一致或正确配置 **CORS**。
 - 网关以子路径转发（如 `/operators/internal`）时，可设置环境变量 **`INGRESS_STRIP_PREFIX`**（映射为 `src/config/env.js` 的 `ingressStripPrefix`），由 `src/index.js` 在路由匹配前剥掉前缀，应用内仍按 **`/api`**、**`/static`**、**`/health`** 处理。
 - 镜像与 CI：见本仓库 **`Dockerfile`**、**`.github/workflows`**。
 
@@ -362,7 +248,7 @@ Chat 会把工具结果包装后传给插件，你在实现时按下面规则处
 
 ## 12. 仓库内可参考的完整示例
 
-下列目录在本仓库提供 **HTTP 算子 + 可选远程插件**，适合对照实现：
+下列目录在本仓库提供 **HTTP 算子 + 可选MCP App**，适合对照实现：
 
 | 场景 | 算子目录 |
 |------|----------|
@@ -381,8 +267,6 @@ Chat 会把工具结果包装后传给插件，你在实现时按下面规则处
 - [ ] 若使用 **`attachConfig`**：HTTP 方法为 **POST/PUT/PATCH**，且与设计上的 multipart 限制一致。
 - [ ] **`outputSchema` 与路由实际返回的 JSON 一致**；需要连线的字段已标 **`isPort: true`** 并配有 **`title`**（英）及 **`metadata.locales.zh.methods[]` 中对应文案**（中）。含 Chat 插件时按第 **8.0** 节验证剥壳与渲染。
 - [ ] 需要平台系统 Key 时：根级 **`enableGeniSpaceAuth`** 与说明一致。
-- [ ] 含插件时：**`pluginUrl`** 在生产可访问，CORS 正确。
-- [ ] 需要**消息列表 Artifact 内联**时：`plugin/manifest.json` 含 **`widget`** 且构建产物中存在对应脚本；本地可 **`GET /static/plugins/<category>/<name>/widget.js`**（或 manifest 中声明的文件名）确认非 404。
 - [ ] 若**只需要内联卡片、不需要活动面板**：可省略 **`main`**，并确认第 **8.3** 节行为符合预期；若**需要侧栏详情**，则 **`main` 非空**且产物中存在该入口文件。
 - [ ] 含插件且有多语言或明暗主题时：插件已按 **`props.config.locale` / `props.config.theme`** 渲染，并在 Chat 内切换后验证同步。
 - [ ] 本地 **`npm test`** / 手工调用关键路径通过。

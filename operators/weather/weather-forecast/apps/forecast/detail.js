@@ -1,9 +1,11 @@
-'use strict';
+import React from 'react';
+import * as Lucide from 'lucide-react';
+import { translate, localeIndex } from '../../../../../mcp-apps/locale.mjs';
+import locales from './locales.json';
 
-// i18n: plugin/locales/*.json — npm run build:plugins prepends __PLUGIN_I18N + __gsPluginT.
 
 function tt(p, k) {
-  return __gsPluginT(__PLUGIN_I18N, p, k);
+  return translate(locales, p, k);
 }
 
 function round(v) {
@@ -44,13 +46,6 @@ function parseWeatherPayload(raw) {
     }
   }
   if (!obj || typeof obj !== 'object') return { kind: 'none' };
-  if (Array.isArray(obj) && obj[0] && obj[0].text) return parseWeatherPayload(obj[0].text);
-  if (obj.data && Array.isArray(obj.data) && obj.data[0] && obj.data[0].text) return parseWeatherPayload(obj.data[0].text);
-  var inner = obj.result && obj.result.content && obj.result.content[0];
-  if (inner && inner.text) return parseWeatherPayload(inner.text);
-  inner = obj.data && obj.data.result && obj.data.result.content && obj.data.result.content[0];
-  if (inner && inner.text) return parseWeatherPayload(inner.text);
-
   if (obj.operatorId != null || obj.methodId != null) {
     if (obj.data != null && typeof obj.data === 'object' && !Array.isArray(obj.data)) {
       obj = obj.data;
@@ -78,8 +73,7 @@ function errHintKey(code) {
   return 'err_hint_generic';
 }
 
-module.exports.default = function WeatherRemote(props) {
-  var React = require('react');
+export default function WeatherRemote(props) {
   var R = React;
   var dark = props.config && props.config.theme === 'dark';
   var parsed = parseWeatherPayload(props.data);
