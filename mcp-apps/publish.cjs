@@ -21,6 +21,7 @@ function repositoryUrl(raw) {
   return url.href;
 }
 async function publish(options, dependencies = {}) {
+  if (!options?.api || !options.output) throw new Error('--api and --output are required');
   const api = normalizedEnvironment(options.api);
   const parsed = new URL(api);
   if (parsed.protocol !== 'https:' && !['localhost','127.0.0.1','[::1]'].includes(parsed.hostname)) throw new Error('MCP_APP_HTTPS_REQUIRED');
@@ -46,7 +47,7 @@ async function publish(options, dependencies = {}) {
     const bytes = await fs.readFile(path.join(root, app.file));
     const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
     if (sha256 !== app.sha256) throw new Error('MCP_APP_BUILD_HASH_MISMATCH');
-    const form = new FormData(); form.append('file', new Blob([bytes], { type: app.mimeType }), app.id + '.html');
+    const form = new FormData(); form.append('file', new Blob([bytes], { type: app.mimeType }), app.id + '-' + sha256 + '.html');
     const uploaded = await post('/storage/files/upload', form, true);
     if (typeof uploaded.id !== 'string') throw new Error('MCP_APP_UPLOAD_ID_MISSING');
     const release = await post('/mcp/apps/releases', { name: build.repository + '/' + app.id,

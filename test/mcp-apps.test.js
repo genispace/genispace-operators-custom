@@ -129,6 +129,8 @@ test('publisher uses exact built bytes and standard release API, then persists r
     assert.equal(release.entries[0].sha256,result.apps[catalog[0].id].sha256);
     assert.match(requests[0].type,/multipart\/form-data/);
     assert.match(requests[0].body.toString(),/<!doctype html>/);
+    assert.ok(requests[0].body.toString().includes(release.entries[0].sha256 + '.html'));
+    await assert.rejects(publish({ api: 'http://localhost:3000/api' }), /--api and --output are required/);
     assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory,'bindings.json'),'utf8')),result);
   } finally { await new Promise(resolve => server.close(resolve)); await fs.rm(directory,{recursive:true,force:true}); }
 });
