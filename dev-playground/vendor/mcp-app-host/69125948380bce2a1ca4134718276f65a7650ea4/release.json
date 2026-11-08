@@ -1,0 +1,10 @@
+{
+  "package": "@genispace/mcp-app-host",
+  "version": "0.1.0",
+  "sourceRevision": "69125948380bce2a1ca4134718276f65a7650ea4",
+  "artifact": "genispace-mcp-app-host-0.1.0.tgz",
+  "sha256": "910037d0dfaf50e524779c377925e6d68c3b995508eb9802971c6e99983d21a0",
+  "integrity": "sha512-menZLENsVCDV5Ka/R4z7YWv6f61qyYvw7QMU4O8omoqcEnZA++q1zSKsejt9JyUWuOLjEW9BrcS2KyXQXnhDrA==",
+  "sandboxSha256": "f915f519cd4809fdfe31212059619546a6c7771add2aafa64a1b51b437e26d48",
+  "protocolVersion": "2026-01-26"
+}

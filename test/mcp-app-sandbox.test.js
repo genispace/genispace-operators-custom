@@ -4,7 +4,8 @@ const path = require('node:path');
 const net = require('node:net');
 const { spawn } = require('node:child_process');
 const crypto = require('node:crypto');
-const release = require('../dev-playground/vendor/mcp-app-host/1dcdad95643931a3254f9fdb0bbe2699069ce659/release.json');
+const hostDependency = require('../dev-playground/package.json').dependencies['@genispace/mcp-app-host'];
+const release = require(path.join(path.dirname(path.resolve(__dirname, '../dev-playground', hostDependency.slice('file:'.length))), 'release.json'));
 
 test('local standard sandbox serves the Host origin query, immutable bytes and strict real HTTP headers', async () => {
   const reservation = net.createServer(); await new Promise(resolve => reservation.listen(0,'127.0.0.1',resolve));
