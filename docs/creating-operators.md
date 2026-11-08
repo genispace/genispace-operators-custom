@@ -101,9 +101,9 @@ metadata: {
 
 为 `true` 时，平台在调用你的 HTTP 服务时可能附加 **`GeniSpace: <systemApiKey>`** 请求头（具体以导入后的系统配置与执行上下文为准）。本地调试台（`dev-playground`）是否展示 Key 输入区：**仅当算子文件根级** `enableGeniSpaceAuth === true`；**仅方法级** OpenAPI `security: GeniSpaceAuth` 只影响文档，**不会**单独打开调试台 Key 区域。路由侧校验见第 7 节。
 
-### 4.7 `mcpAppsByMethod`（可选）
+### 4.7 方法的 `view`（可选）
 
-方法关联标准 MCP App 的源码声明，实际 `mcpAppBinding` 从目标环境的发布绑定文件读取，详见第 8 节。
+在方法对象中声明 `view: { url: './static/mcp-apps/weather-forecast/view.html' }`。视图随工具交付，定义输出器按受控服务基址展开绝对 URL；自定义托管视图填写完整 HTTPS 地址。无需额外资源发布、版本选择或绑定，详见第 8 节。
 
 ### 4.8 `inputSchema` / `outputSchema`、工作流端口（`isPort` / `title`）
 
@@ -200,20 +200,15 @@ const apiKey = cfg.SENDGRID_API_KEY;
 
 ---
 
-## 8. 标准 MCP Apps
+## 8. 标准 MCP Apps 工具视图
 
-界面是独立的、可重复构建的 HTML 资源。React 组件使用 ESM；`mcp-apps/runtime.jsx` 通过官方 Apps SDK 接收 `ontoolinput`、`ontoolresult` 与 Host context。界面不能读取平台凭据，初始化时不会调用业务工具。
+每个方法最多一个可选视图地址。源码放在 `operators/<category>/<name>/apps/<entry>/`，构建清单 `mcp-apps/catalog.json` 只用于打包资源。执行 `npm ci --prefix mcp-apps && npm run build:apps && npm run validate:apps`，同一镜像包含业务代码和 `public/mcp-apps/<app>/view.html`，生产服务也提供静态资源。`OPERATORS_BASE_URL` 保留已有 Ingress 前缀，不能指向业务方法路径。
 
-源码放在 `operators/<category>/<name>/apps/<entry>/`，包含 `app.json`、`entry.jsx`、`detail.js`、可选 `summary.js` 和 `locales.json`。摘要与详情属于同一个 App：根据标准 `containerDimensions` 调整展示，保持详情树与本地草稿状态。
+正常同步工具定义、空间启用或升级后，平台将方法声明适配为标准 `ui://` 资源；客户端通过权限受控的 MCP `resources/read` 加载，不把源 URL 直接当宿主 iframe 地址。只在需要私网来源时，由部署配置明确设置 API 的 `MCP_VIEW_TRUSTED_BASES`，限制到资源路径，不能让用户开放任意内网。
 
-1. 在 `mcp-apps/catalog.json` 声明 App 与真实 operator/method identifier 的对应关系。
-2. 算子通过 `mcpAppsByMethod` 声明 `{ app, entryKey: 'view' }`。多个方法可以共用同一 App。
-3. 执行 `npm ci --prefix mcp-apps && npm run build:apps`，产物为 `public/mcp-apps/<app>/view.html`，构建记录包含 SHA-256。SDK、React 与多语言均已打包，无运行时 CDN。
-4. 提交源码后运行 `npm run publish:apps -- --api <环境API根地址> --output <绑定文件> [--global]`。凭据只通过 `GENISPACE_API_KEY` 环境变量提供，不进入文件或 App。发布器上传实际字节并创建不可变 release。
-5. 服务设置 `MCP_APP_API_BASE_URL` 与 `MCP_APP_BINDINGS_FILE`。方法导出的 `mcpAppBinding` 只引用实际发布的 release ID；标准工具 metadata 与 `ui://` 资源 URI 由平台生成。
-6. 部署前运行 `npm run validate:apps`；缺失绑定、目标环境不符或构建 hash 变化均失败。未发布时业务方法仍可执行，definition metadata 明确显示缺口。
+不再区分 Widget / Plugin 产品类型。一份 HTML 响应式适配容器，也可根据协商的 inline / fullscreen / pip 调整内容；三种模式不是必选。右侧详情栏是宿主布局，不等于 pip。对话内展示不会取消，平台和桌面共用标准 Host 与视觉约定。初始化、切换主题和改变大小不执行工具。
 
-开发调试台使用固定 Git commit 的共享沙箱 Host 和明确的 `local-preview` 身份；视图内工具调用被关闭。选 240px 检查行内摘要，选 560px 检查详情；调整容器高度不能重建 App。生产资源仅通过权限受控的标准 MCP `resources/read` 获取。
+调试台只读预览使用固定共享 Host；240px 检查摘要，560px 检查详情，容器调整保留已有状态。API Key、用户令牌、文件访问和业务操作都由 Host / 服务端授权，视图不获取平台凭据。
 
 ## 9. 环境变量（摘要）
 

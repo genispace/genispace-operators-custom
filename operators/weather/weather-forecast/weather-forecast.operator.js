@@ -106,12 +106,10 @@ module.exports = {
     }
   },
   routes: './weather-forecast.routes.js',
-  mcpAppsByMethod: {
-    forecast: { app: 'weather-forecast', entryKey: 'view' }
-  },
   methods: [
     {
       identifier: 'forecast',
+      view: { url: './static/mcp-apps/weather-forecast/view.html' },
       name: 'Query weather forecast',
       description:
         'Geocode a place name and return current conditions plus daily rows from Open-Meteo. On business failure the HTTP status stays 200 and the payload in `data` has `ok: false`; use `error_code` / `error_message` to branch.',

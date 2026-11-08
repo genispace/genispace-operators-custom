@@ -24,7 +24,7 @@ const logger = require('./utils/logger');
 
 const app = express();
 
-// Self-contained resources are served for explicit local playground preview only.
+// The image ships the same self-contained resources in every environment.
 const publicAppsPath = path.join(__dirname, '../public/mcp-apps');
 
 // Coordinates discovery, registry, OpenAPI merge, and route application
@@ -64,8 +64,11 @@ async function startApp() {
     if (config.isDevelopment) {
       const repoRoot = path.join(__dirname, '..');
       execSync('node mcp-apps/build.cjs', { cwd: repoRoot, stdio: 'pipe' });
-      app.use('/static/mcp-apps', express.static(publicAppsPath, { fallthrough: false }));
+
     }
+
+    app.use('/static/mcp-apps', express.static(publicAppsPath, { fallthrough: false, index: false, maxAge: '5m',
+      setHeaders: res => res.setHeader('X-Content-Type-Options', 'nosniff') }));
 
     const operatorsDir = path.join(__dirname, '../operators');
     await appService.initialize(operatorsDir);

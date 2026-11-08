@@ -15,7 +15,6 @@
     "docker:build": "docker build -t genispace/operators-internal:latest .",
     "docker:run": "docker run -p 8080:8080 genispace/operators-internal:latest",
     "build:apps": "node mcp-apps/build.cjs",
-    "publish:apps": "node mcp-apps/publish.cjs",
     "validate:apps": "node mcp-apps/validate.cjs"
   },
   "keywords": [

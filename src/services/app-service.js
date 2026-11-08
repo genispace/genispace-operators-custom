@@ -11,7 +11,7 @@ const RouterBuilder = require('../core/router');
 const DocumentGenerator = require('./docs-generator');
 const logger = require('../utils/logger');
 const { operatorMethods } = require('../utils/operator-definition');
-const { attachBindings, resolvePublications } = require('./mcp-app-bindings');
+const { attachViews } = require('./method-views');
 const { playgroundNeedsGeniSpaceKey } = require('../utils/operator-auth');
 
 class ApplicationService {
@@ -218,12 +218,8 @@ class ApplicationService {
         // System-level API runtime config (base URL, headers, timeout)
         systemConfiguration: defaultSystemConfiguration,
 
-        // Published standard MCP App bindings are deployment data, never remote script URLs.
-        methods: this._mergeChatPluginConfigs(
-          this._buildMethodsFromDefinition(config),
-          config,
-          this._resolvePublicBaseUrl(baseUrl)
-        ),
+        // Method view URLs follow the same service deployment as their tools.
+        methods: attachViews(this._buildMethodsFromDefinition(config), (this.config.publicBaseUrl || this.config.getBrowserBaseUrl?.() || `http://localhost:${this.config.port || 8080}${this.config.ingressStripPrefix || ''}`)),
         
         // Metadata: export audit fields first, then merge file metadata (e.g. locales.zh)
         metadata: {
@@ -232,8 +228,7 @@ class ApplicationService {
           exportedBy: 'GeniSpace Custom Operators API',
           originalOperatorId: operatorId,
           registeredAt: metadata.registeredAt,
-          ...fileMetadata,
-        mcpAppPublications: resolvePublications(config).map(item => ({ method: item.method, app: item.app, status: item.binding ? 'published' : 'unpublished' }))
+          ...fileMetadata
         }
       }
     };
@@ -272,8 +267,8 @@ class ApplicationService {
             inputSchema: m.inputSchema,
             endpoint: m.configuration?.values?.endpoint,
             httpMethod: m.configuration?.values?.method,
-            mcpAppBinding: m.mcpAppBinding || null,
-            mcpAppPreview: resolvePublications(config).find(item => item.method === m.identifier)?.preview || null,
+            view: m.view || null,
+            mcpAppPreview: m.view ? { app: config.info.name, entryKey: 'view', resourcePath: new URL(m.view.url).pathname } : null,
             needsGeniSpaceKey
           }))
         };
@@ -305,6 +300,7 @@ class ApplicationService {
       return {
         name: m.name,
         identifier: m.identifier,
+        ...(m.view ? { view: m.view } : {}),
         description: m.description != null ? m.description : '',
         inputSchema,
         outputSchema,

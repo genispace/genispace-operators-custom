@@ -7,7 +7,7 @@ export type MethodRow = {
   inputSchema: RJSFSchema;
   endpoint?: string;
   httpMethod?: string;
-  mcpAppBinding?: { releaseId: string; entryKey: string; visibility?: Array<'model' | 'app'> } | null;
+  view?: { url: string } | null;
   mcpAppPreview?: { app: string; entryKey: string; resourcePath: string } | null;
   /** 与 playground-registry / 算子定义一致：为 true 时应在请求中携带 GeniSpace 头 */
   needsGeniSpaceKey?: boolean;

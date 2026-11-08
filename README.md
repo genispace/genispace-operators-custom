@@ -489,22 +489,18 @@ This project is open source under the [MIT License](LICENSE).
 
 ## Standard MCP Apps
 
-Operator methods declare `mcpAppsByMethod` with an App ID and `entryKey: "view"`. Sources live in `operators/<category>/<operator>/apps/<entry>/`. Apps receive standard tool inputs/results and Host context; React, icons and locale dictionaries are bundled into immutable HTML. The responsive summary/detail layout uses `containerDimensions` and preserves mounted draft state. Apps never invoke business tools on initialization.
+Each method may declare one optional view: `view: { url: './static/mcp-apps/weather-forecast/view.html' }`. Relative paths are expanded against the deployment-owned service base, preserving the ingress prefix. Multiple methods may share one view. No view means normal text/data/file results.
 
 ```sh
 npm ci
 npm ci --prefix mcp-apps
 npm run build:apps
+npm run validate:apps
 npm test
 ```
 
-Publish to a selected API environment with a deployment credential in `GENISPACE_API_KEY`:
+The same Operator image ships business code and self-contained HTML at `/static/mcp-apps/<app>/view.html` in production and development. Configure the existing `OPERATORS_BASE_URL` with the public service prefix. Sync/enable the normal tool definition; the platform adapts its view into standard `ui://` metadata and authorized `resources/read`. No separate asset publication or environment binding file is required. Deployment-owned internal source exceptions are configured on the API through `MCP_VIEW_TRUSTED_BASES`, never by tool users.
 
-```sh
-npm run publish:apps -- --api https://api.example.com/api --output .mcp-app-bindings/production.json --global
-MCP_APP_API_BASE_URL=https://api.example.com/api MCP_APP_BINDINGS_FILE=.mcp-app-bindings/production.json npm run validate:apps
-```
+One HTML view adapts to container dimensions and negotiated MCP Apps display modes. Inline results and right-side detail remain available in both platform and desktop; the right sidebar is host layout, not `pip`. Supported modes are negotiated and need not include all three. Initialization, resize, theme changes and preview never call business tools.
 
-Publish only committed source revisions. The publisher uploads the exact built bytes, verifies SHA-256 and creates a versioned release through the platform API. Repeating the same release manifest is idempotent. The environment binding manifest contains actual release IDs for every declared operator method; shared-flow methods reference one release. Set `MCP_APP_API_BASE_URL` and `MCP_APP_BINDINGS_FILE` on the operator service. A missing publication appears in definition metadata, while business methods remain available without a view. Deployment validation fails on any missing binding, foreign environment or changed build hash.
-
-The local playground uses the shared sandboxed Host as one versioned build artifact with source revision and SHA verification, with explicit `local-preview` identity and all App tool actions disabled. It requires Node 22. Run `npm run dev:sandbox --prefix dev-playground` in a separate terminal for the local sandbox proxy. The archive and release provenance are checked before every playground build; consumer source does not contain a second Host implementation. `VITE_MCP_APP_SANDBOX_URL` selects that proxy (default `http://127.0.0.1:5021/sandbox.html`). Only development mode serves `/static/mcp-apps/` for this explicit preview. Production resources are read through authorized MCP `resources/read`. API keys stay outside the App.
+The playground uses the fixed shared sandboxed Host artifact with explicit local-preview identity and all tool actions disabled. Run `npm run dev:sandbox --prefix dev-playground` for its isolated proxy. Built resources include the SDK, React and locales; no runtime CDN, parent-page evaluation, platform credentials or npm publication is needed.
