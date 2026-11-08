@@ -35,6 +35,6 @@ export function StandardAppPreview({ method, result, args, theme, locale, height
   const context = useMemo(() => ({ theme, locale, displayMode: 'inline' as const,
     availableDisplayModes: ['inline'] as ['inline'], containerDimensions: { maxHeight: height, maxWidth: 1200 } }), [theme, locale, height]);
   return <div style={{ height }}><McpAppView descriptor={descriptor} port={port} context={context}
-    sandboxUrl={import.meta.env.VITE_MCP_APP_SANDBOX_URL || 'http://127.0.0.1:5017/sandbox.html'}
+    sandboxUrl={import.meta.env.VITE_MCP_APP_SANDBOX_URL || 'http://127.0.0.1:5021/sandbox.html'}
     title={method.name} className="h-full w-full border-0" /></div>;
 }

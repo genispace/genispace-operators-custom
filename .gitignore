@@ -149,9 +149,6 @@ debug.js
 *.backup
 *.orig
 
-# Chat plugin static assets (npm run build:plugins / npm run build)
-public/plugins/
-
 # Reproducible MCP App artifacts and environment publication records
 public/mcp-apps/
 .mcp-app-bindings/
