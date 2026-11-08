@@ -18,7 +18,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^16.6.6",
-    "@genispace/mcp-app-host": "file:vendor/mcp-app-host/bfa3e4e69b55173f3a006e3fd1865ab874c80c00/genispace-mcp-app-host-0.1.0.tgz",
+    "@genispace/mcp-app-host": "file:vendor/mcp-app-host/e11241d9241fea8b542b99e3e09819bd76a7a7d3/genispace-mcp-app-host-0.1.0.tgz",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@modelcontextprotocol/ext-apps": "1.7.5"
   },
