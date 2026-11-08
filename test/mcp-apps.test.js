@@ -134,3 +134,19 @@ test('publisher uses exact built bytes and standard release API, then persists r
     assert.deepEqual(JSON.parse(await fs.readFile(path.join(directory,'bindings.json'),'utf8')),result);
   } finally { await new Promise(resolve => server.close(resolve)); await fs.rm(directory,{recursive:true,force:true}); }
 });
+
+
+test('actual official Apps handshake declares the implemented inline and fullscreen modes without business calls', async t => {
+  const { createStandardApp } = await import('../mcp-apps/protocol.mjs');
+  const { App } = await import(uiRequire.resolve('@modelcontextprotocol/ext-apps'));
+  const { AppBridge } = await import(uiRequire.resolve('@modelcontextprotocol/ext-apps/app-bridge'));
+  const { InMemoryTransport } = await import(uiRequire.resolve('@modelcontextprotocol/sdk/inMemory.js'));
+  const app = createStandardApp(App, 'Asset contract', { autoResize: false });
+  const bridge = new AppBridge(null, { name: 'Independent test Host', version: '1' }, {});
+  const [appTransport, hostTransport] = InMemoryTransport.createLinkedPair();
+  t.after(async () => { await app.close(); await bridge.close(); });
+  await bridge.connect(hostTransport);
+  await app.connect(appTransport);
+  assert.deepEqual(bridge.getAppCapabilities().availableDisplayModes, ['inline', 'fullscreen']);
+  assert.equal(app.getHostCapabilities().serverTools, undefined);
+});

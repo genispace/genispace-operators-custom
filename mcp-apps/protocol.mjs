@@ -31,3 +31,8 @@ export function connectView(app, receive) {
   // Handlers must exist before connect: hosts may deliver inputs immediately.
   return app.connect().then(() => update({ context: app.getHostContext() || {} }));
 }
+
+/** Declare the responsive modes implemented by every resource in this build. */
+export function createStandardApp(App, title, options = { autoResize: true }) {
+  return new App({ name: title, version: '1.0.0' }, { availableDisplayModes: ['inline', 'fullscreen'] }, options);
+}

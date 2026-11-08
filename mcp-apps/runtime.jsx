@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App, applyDocumentTheme, applyHostStyleVariables } from '@modelcontextprotocol/ext-apps';
-import { availableHeight, compactPresentation, connectView, toolResultProps } from './protocol.mjs';
+import { availableHeight, compactPresentation, connectView, toolResultProps, createStandardApp } from './protocol.mjs';
 
 export function mountApp({ title, Detail, Summary }) {
-  const app = new App({ name: title, version: '1.0.0' }, {}, { autoResize: true });
+  const app = createStandardApp(App, title);
   function View() {
     const [snapshot, setSnapshot] = useState({ result: undefined, arguments: {}, context: {} });
     const [expanded, setExpanded] = useState(false);
