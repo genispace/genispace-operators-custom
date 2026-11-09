@@ -268,7 +268,7 @@ class ApplicationService {
             endpoint: m.configuration?.values?.endpoint,
             httpMethod: m.configuration?.values?.method,
             view: m.view || null,
-            mcpAppPreview: m.view ? { app: config.info.name, entryKey: 'view', resourcePath: new URL(m.view.url).pathname } : null,
+            mcpAppPreview: m.view ? { app: config.info.name, resourcePath: new URL(m.view.url).pathname } : null,
             needsGeniSpaceKey
           }))
         };

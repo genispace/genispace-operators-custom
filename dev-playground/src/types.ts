@@ -8,7 +8,7 @@ export type MethodRow = {
   endpoint?: string;
   httpMethod?: string;
   view?: { url: string } | null;
-  mcpAppPreview?: { app: string; entryKey: string; resourcePath: string } | null;
+  mcpAppPreview?: { app: string; resourcePath: string } | null;
   /** 与 playground-registry / 算子定义一致：为 true 时应在请求中携带 GeniSpace 头 */
   needsGeniSpaceKey?: boolean;
 };

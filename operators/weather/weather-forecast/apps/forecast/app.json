@@ -2,7 +2,6 @@
   "id": "weather-forecast",
   "title": "Weather forecast",
   "version": "1.0.0",
-  "entryKey": "view",
   "summary": true,
   "csp": {},
   "permissions": {}
