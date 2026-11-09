@@ -2,38 +2,33 @@
 
 **🌐 Language**: [中文](README_CN.md) | **English**
 
-> **Platform-internal** operator service: OpenAPI HTTP operators plus optional **Chat remote plugins** served from `/static/plugins`.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
-This repository is **not** the customer-facing `operators-custom` template. It ships **official built-in operators** for GeniSpace (release cadence follows the platform). **Authoring guide** (directory layout, `*.operator.js` / routes, user vs system configuration, `__config` / `configDelivery`, Chat plugins, auth, local dev, deploy): [docs/creating-operators.md](docs/creating-operators.md).
+This repository is **not** the customer-facing `operators-custom` template. It ships **official built-in operators** for GeniSpace (release cadence follows the platform). **Authoring guide** (directory layout, `*.operator.js` / routes, user vs system configuration, `__config` / `configDelivery`, MCP Apps, auth, local dev, deploy): [docs/creating-operators.md](docs/creating-operators.md).
 
 ## 💡 What is an Operator?
 
-An operator declares HTTP methods and JSON Schemas in root-level **`methods`**. At load time the service **derives OpenAPI** for Swagger and endpoint indexing. Optional root **`chatPluginByMethod`** maps to exported **`chatPluginConfig`** so Chat can load a **remote plugin** (`manifest.json` + JS bundle) for rich UI. Legacy **`genispace.*`** nesting remains supported.
 
 ## 🚀 What This Repo Adds (vs operators-custom)
 
-- **`PUBLIC_BASE_URL`** (or `OPERATORS_BASE_URL`) for absolute **`pluginUrl`** in exported definitions.
-- **`npm run build:plugins`** → copies each `operators/**/plugin/` into `public/plugins/...`, served at **`/static/plugins/...`**.
-- **`npm run dev`** → Express (default `:8080`) + Vite playground (`:18080`) for schema forms and plugin preview.
+- **`npm run dev`** → Express (default `:8080`) + Vite playground (`:18080`) for schema forms and standard App preview.
 - **Pilot operator**: `operators/web/web-browser/` aligned with the Python `web_browser` builtin (input validation + MCP-shaped JSON only; no headless browser).
 
 ### Core Advantages
 
-- Same **Express** routing model as custom operators; contract is **methods-first** with **derived OpenAPI**, plus **first-class Chat plugin** workflow.
+- Same **Express** routing model as custom operators; contract is **methods-first** with **derived OpenAPI**, plus **first-class MCP App** workflow.
 - **Clear boundary**: implementation here, registration and ACL in **Core API**, tool listing in **MCP-Server**, rendering in **Chat**.
 
 ## 🚀 Quick Start
 
-### 1. Install, build plugins, start API
+### 1. Install, build Apps, start API
 
 ```bash
 git clone https://github.com/genispace/operators-internal.git
 cd operators-internal
 npm install
-npm run build:plugins
 npm start
 ```
 
@@ -41,7 +36,6 @@ Access:
 - 🏠 **Homepage**: http://localhost:8080/api (HTML index)
 - 📚 **API Docs**: http://localhost:8080/api/docs  
 - 🔍 **Health Check**: http://localhost:8080/health
-- 📦 **Example plugin manifest**: http://localhost:8080/static/plugins/web/web-browser/manifest.json
 
 ### 2. Dev playground (operators + UI preview)
 
@@ -127,7 +121,6 @@ module.exports = {
 };
 ```
 
-Optional: `tags`, `security`, `requestBodyRequired` (default `true`), `additionalResponses` (Swagger-only extra status codes), root **`openapiComponents.schemas`** for `$ref` (see `genispace-info`). For Chat plugins, use root **`chatPluginByMethod`** with keys matching **`identifier`** (lowercase). Legacy `genispace: { methods, chatPluginByMethod, openapiComponents }` still works.
 
 ### Business Logic File
 
@@ -493,3 +486,21 @@ curl -X POST http://localhost:8080/api/platform/genispace-info/user-profile \
 ## 📄 Open Source License
 
 This project is open source under the [MIT License](LICENSE).
+
+## Standard MCP Apps
+
+Each method may declare one optional view: `view: { url: './static/mcp-apps/weather-forecast/view.html' }`. Relative paths are expanded against the deployment-owned service base, preserving the ingress prefix. Multiple methods may share one view. No view means normal text/data/file results.
+
+```sh
+npm ci
+npm ci --prefix mcp-apps
+npm run build:apps
+npm run validate:apps
+npm test
+```
+
+The same Operator image ships business code and self-contained HTML at `/static/mcp-apps/<app>/view.html` in production and development. Configure the existing `OPERATORS_BASE_URL` with the public service prefix. Sync/enable the normal tool definition; the platform adapts its view into standard `ui://` metadata and authorized `resources/read`. No separate asset publication or environment binding file is required. Deployment-owned internal source exceptions are configured on the API through `MCP_VIEW_TRUSTED_BASES`, never by tool users.
+
+One HTML view adapts to container dimensions and negotiated MCP Apps display modes. Inline results and right-side detail remain available in both platform and desktop; the right sidebar is host layout, not `pip`. Supported modes are negotiated and need not include all three. Initialization, resize, theme changes and preview never call business tools.
+
+The playground uses the fixed shared sandboxed Host artifact with explicit local-preview identity and all tool actions disabled. Run `npm run dev:sandbox --prefix dev-playground` for its isolated proxy. Built resources include the SDK, React and locales; no runtime CDN, parent-page evaluation, platform credentials or npm publication is needed.

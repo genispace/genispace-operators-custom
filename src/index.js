@@ -24,8 +24,8 @@ const logger = require('./utils/logger');
 
 const app = express();
 
-// Chat plugin assets: mount after setupMiddlewares so CORS applies (dev playground fetches manifest/JS cross-origin).
-const publicPluginsPath = path.join(__dirname, '../public/plugins');
+// The image ships the same self-contained resources in every environment.
+const publicAppsPath = path.join(__dirname, '../public/mcp-apps');
 
 // Coordinates discovery, registry, OpenAPI merge, and route application
 const appService = new ApplicationService(config);
@@ -61,24 +61,14 @@ async function startApp() {
     // CORS, JSON/body limits, logging, auth, rate limiting, etc.
     setupMiddlewares(app, config);
 
-    // Dev: public/plugins is gitignored; nodemon restarts skip npm pre scripts — sync operators/**/plugin on boot.
     if (config.isDevelopment) {
       const repoRoot = path.join(__dirname, '..');
-      try {
-        execSync('node scripts/build-plugins.js', { cwd: repoRoot, stdio: 'pipe' });
-        logger.debug('Dev: synced Chat plugins -> public/plugins');
-      } catch (err) {
-        const detail = err.stderr ? String(err.stderr) : err.message;
-        logger.warn('Dev: build-plugins failed; manifests under /static/plugins may 404', { error: detail });
-      }
+      execSync('node mcp-apps/build.cjs', { cwd: repoRoot, stdio: 'pipe' });
+
     }
 
-    // Static hosting for built plugin bundles (also under apiPrefix when gateway forwards full path)
-    app.use('/static/plugins', express.static(publicPluginsPath, { fallthrough: true }));
-    const apiPx = (config.apiPrefix && String(config.apiPrefix).replace(/\/$/, '')) || '';
-    if (apiPx) {
-      app.use(`${apiPx}/static/plugins`, express.static(publicPluginsPath, { fallthrough: true }));
-    }
+    app.use('/static/mcp-apps', express.static(publicAppsPath, { fallthrough: false, index: false, maxAge: '5m',
+      setHeaders: res => res.setHeader('X-Content-Type-Options', 'nosniff') }));
 
     const operatorsDir = path.join(__dirname, '../operators');
     await appService.initialize(operatorsDir);

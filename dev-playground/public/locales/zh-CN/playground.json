@@ -13,10 +13,7 @@
   "panel": {
     "requestTitle": "请求体",
     "requestDesc": "基于 inputSchema 生成表单并调用算子 API",
-    "outputTitle": "输出预览",
-    "outputDesc": "JSON 或远程 chat 插件渲染（与线上一致加载方式）",
-    "outputEmpty": "执行后在此展示结果；若方法启用 chatPluginConfig 将加载远程插件。",
-    "noChatPluginHint": "当前方法未启用 chatPluginConfig（与 Chat 默认算子视图契约一致）。"
+    "outputTitle": "输出预览"
   },
   "form": {
     "selectOperatorMethod": "请在顶部选择算子和方法",
@@ -31,10 +28,6 @@
     "keyLabel": "GeniSpace API Key",
     "keyHint": "仅保存在本机浏览器（localStorage），请勿将密钥提交到代码仓库。",
     "keyPlaceholder": "粘贴系统 API Key"
-  },
-  "plugin": {
-    "loading": "正在加载远程插件…",
-    "noDefaultExport": "插件缺少可渲染的默认导出"
   },
   "errors": {
     "registryFailed": "算子列表加载失败"

@@ -152,7 +152,7 @@ router.post('/forecast', async (req, res, next) => {
       timezone: forecast.timezone || ''
     };
 
-    // data 即归一化天气 JSON；Chat 插件由算子 chatPluginByMethod 绑定，不依赖 widget metadata
+    // data 即归一化天气 JSON；标准 MCP App 由发布绑定关联
     sendSuccessResponse(res, weather_data);
   } catch (err) {
     if (err.response && err.config && typeof err.config.url === 'string') {

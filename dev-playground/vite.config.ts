@@ -7,11 +7,11 @@ export default defineConfig({
     port: 18080,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8080',
+        target: process.env.OPERATORS_DEV_API_URL || 'http://127.0.0.1:8080',
         changeOrigin: true
       },
       '/static': {
-        target: 'http://127.0.0.1:8080',
+        target: process.env.OPERATORS_DEV_API_URL || 'http://127.0.0.1:8080',
         changeOrigin: true
       }
     }

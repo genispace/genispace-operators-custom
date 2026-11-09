@@ -1,0 +1,8 @@
+{
+  "id": "weather-forecast",
+  "title": "Weather forecast",
+  "version": "1.0.0",
+  "summary": true,
+  "csp": {},
+  "permissions": {}
+}

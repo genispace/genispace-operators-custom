@@ -1,11 +1,5 @@
 import type { RJSFSchema } from '@rjsf/utils';
 
-export type ChatPluginConfig = {
-  enabled?: boolean;
-  pluginUrl?: string;
-  pluginId?: string;
-} | null;
-
 export type MethodRow = {
   identifier: string;
   name: string;
@@ -13,7 +7,8 @@ export type MethodRow = {
   inputSchema: RJSFSchema;
   endpoint?: string;
   httpMethod?: string;
-  chatPluginConfig?: ChatPluginConfig;
+  view?: { url: string } | null;
+  mcpAppPreview?: { app: string; resourcePath: string } | null;
   /** 与 playground-registry / 算子定义一致：为 true 时应在请求中携带 GeniSpace 头 */
   needsGeniSpaceKey?: boolean;
 };

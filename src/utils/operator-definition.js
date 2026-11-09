@@ -13,12 +13,8 @@ function openapiComponentsForDerive(config) {
   return config?.openapiComponents ?? config?.genispace?.openapiComponents;
 }
 
-function chatPluginByMethodMap(config) {
-  return config?.chatPluginByMethod ?? config?.genispace?.chatPluginByMethod ?? {};
-}
 
 module.exports = {
   operatorMethods,
-  openapiComponentsForDerive,
-  chatPluginByMethodMap
+  openapiComponentsForDerive
 };

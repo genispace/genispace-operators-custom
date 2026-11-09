@@ -1,0 +1,34 @@
+{
+  "en": {
+    "feels_like": "Feels like",
+    "humidity": "Humidity",
+    "wind": "Wind",
+    "precip": "Precipitation",
+    "forecast_days": "day forecast",
+    "high_low": "High / Low",
+    "no_data": "No weather data",
+    "err_title": "Weather result",
+    "err_hint_INVALID_INPUT": "Provide a non-empty location.",
+    "err_hint_NOT_FOUND": "Try a shorter name, county/city without province prefix, or a well-known English name.",
+    "err_hint_UPSTREAM_ERROR": "The weather provider request failed; retry later or change the location.",
+    "err_hint_generic": "See error_message for details.",
+    "err_code_label": "Code",
+    "err_details": "Details"
+  },
+  "zh": {
+    "feels_like": "体感温度",
+    "humidity": "湿度",
+    "wind": "风速",
+    "precip": "降水量",
+    "forecast_days": "天预报",
+    "high_low": "最高 / 最低",
+    "no_data": "无天气数据",
+    "err_title": "天气查询结果",
+    "err_hint_INVALID_INPUT": "请填写非空地点。",
+    "err_hint_NOT_FOUND": "可尝试更短地名、去掉省级前缀的区县/市名，或常用英文地名。",
+    "err_hint_UPSTREAM_ERROR": "天气服务请求失败，请稍后重试或更换地点。",
+    "err_hint_generic": "请阅读下方 error_message。",
+    "err_code_label": "错误码",
+    "err_details": "详情"
+  }
+}

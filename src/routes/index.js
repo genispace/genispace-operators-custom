@@ -685,7 +685,7 @@ function setupRoutes(app, appService, config) {
     });
   });
 
-  // Dev playground registry: operators, methods, schema, chatPluginConfig (no auth)
+  // Dev playground registry: operators, methods, schema, standard MCP App declaration (no auth)
   app.get(`${apiPrefix}/dev/playground-registry`, (req, res) => {
     try {
       const operators = appService.getPlaygroundRegistry(req);
